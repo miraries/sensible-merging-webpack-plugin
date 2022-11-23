@@ -1,0 +1,9 @@
+.idea
+.vscode
+src
+*.log
+.gitignore
+.npmignore
+tsconfig.base.json
+tsconfig.cjs.json
+tsconfig.esm.json

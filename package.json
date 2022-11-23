@@ -1,0 +1,40 @@
+{
+  "name": "sensible-merging-webpack-plugin",
+  "version": "1.0.0",
+  "description": "",
+  "main": "./dist/index.js",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./dist/esm/types/index.d.ts",
+        "default": "./dist/esm/index.mjs"
+      },
+      "require": {
+        "types": "./dist/cjs/types/index.d.ts",
+        "default": "./dist/cjs/index.js"
+      }
+    }
+  },
+  "scripts": {
+    "build": "rimraf dist && npm run build:esm && npm run build:cjs",
+    "build:esm": "tsc -p tsconfig.esm.json && mv dist/esm/index.js dist/esm/index.mjs",
+    "build:cjs": "tsc -p tsconfig.cjs.json"
+  },
+  "keywords": [],
+  "author": "Ivan Kotlaja",
+  "license": "MIT",
+  "repository": "https://github.com/miraries/sensible-merging-webpack-plugin",
+  "engines": {
+    "node": ">=14"
+  },
+  "devDependencies": {
+    "@types/webpack": "^5.28.0",
+    "rimraf": "^3.0.2",
+    "typescript": "^4.9.3"
+  },
+  "peerDependencies": {
+    "webpack": "^4.46.0 || ^5.28.0"
+  }
+}

@@ -3,7 +3,7 @@ import type { Compiler, Chunk, Module as WebpackModule } from 'webpack';
 
 export type Options = {
   minSizeReduce?: number
-  mergeStrategy?: (aModules: string[], bModules: string[]) => { allowMerge: boolean, reason?: string }
+  mergeStrategy?: ({ aModules, aName, bModules, bName }: { aModules: string[], aName: string, bModules: string[], bName: string }) => { allowMerge: boolean, reason?: string }
 }
 
 type Module = WebpackModule & {
@@ -50,6 +50,20 @@ export default class SensibleMergingPlugin {
           chunks => {
             const chunkGraph = compilation.chunkGraph;
 
+            const moduleListCache: Record<string, string[]> = {};
+
+            const getModuleList = (chunk: Chunk) => {
+              if (moduleListCache[chunk.name]) {
+                return moduleListCache[chunk.name];
+              }
+
+              moduleListCache[chunk.name] = chunkGraph.getChunkModules(chunk)
+                .map(m => (m as Module).resource)
+                .filter(Boolean);
+
+              return moduleListCache[chunk.name];
+            };
+
             let combinations: { a: Chunk, b: Chunk, improvement: number }[] = [];
 
             for (const a of chunks) {
@@ -59,13 +73,18 @@ export default class SensibleMergingPlugin {
                 if (b.canBeInitial()) continue;
                 if (b === a) break;
                 if (!chunkGraph.canChunksBeIntegrated(a, b)) continue;
- 
+
                 if (mergeStrategy) {
-                  const aModules = chunkGraph.getChunkModules(a).map(m => (m as Module).resource).filter(Boolean);
-                  const bModules = chunkGraph.getChunkModules(b).map(m => (m as Module).resource).filter(Boolean);
+                  const aModules = getModuleList(a);
+                  const bModules = getModuleList(b);
 
                   if (aModules.length && bModules.length) {
-                    const { allowMerge, reason } = mergeStrategy(aModules, bModules);
+                    const { allowMerge, reason } = mergeStrategy({
+                      aModules,
+                      aName: a.name,
+                      bModules,
+                      bName: b.name,
+                    });
 
                     if (!allowMerge) {
                       logger.info('Preventing merge ' + (reason ?? ''));

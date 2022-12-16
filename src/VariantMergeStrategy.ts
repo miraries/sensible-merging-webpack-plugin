@@ -5,7 +5,7 @@ type GenerateVariantsFn = (modules: string[]) => {
   variant?: string
 }[];
 
-const VariantMergeStrategy = (generateVariants: GenerateVariantsFn) => {
+const VariantMergeStrategy = ({generateVariants, preventAllVariantMerges = false}: {generateVariants: GenerateVariantsFn, preventAllVariantMerges?: boolean}) => {
   const uniqueModules = (arr: any[]) => {
     const res: any[] = [];
     const cache: Record<any, any> = {};
@@ -32,11 +32,20 @@ const VariantMergeStrategy = (generateVariants: GenerateVariantsFn) => {
 
     for (const vA of variantsA) {
       for (const vB of variantsB) {
-        if (vA.path === vB.path && vA.variant !== vB.variant) {          
-          return {
-            allowMerge: false,
-            reason: `Same asset but differing variants: ${vA.path} - ${vA.variant} / ${vB.variant}`,
-          };
+        if (preventAllVariantMerges) {
+          if (vA.path !== vB.path || vA.variant !== vB.variant) {          
+            return {
+              allowMerge: false,
+              reason: `Preventing all differing variant merges: ${vA.path} - ${vA.variant} / ${vB.variant}`,
+            };
+          }
+        } else {
+          if (vA.path === vB.path && vA.variant !== vB.variant) {          
+            return {
+              allowMerge: false,
+              reason: `Same asset but differing variants: ${vA.path} - ${vA.variant} / ${vB.variant}`,
+            };
+          }
         }
       }
     }

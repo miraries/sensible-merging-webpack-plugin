@@ -1,9 +1,11 @@
 import { Options } from './SensibleMergingPlugin';
 
-type GenerateVariantsFn = (modules: string[]) => {
+type PathVariant = {
   path?: string
   variant?: string
-}[];
+};
+
+type GenerateVariantsFn = (modules: string[]) => PathVariant[];
 
 const VariantMergeStrategy = ({generateVariants, preventAllVariantMerges = false}: {generateVariants: GenerateVariantsFn, preventAllVariantMerges?: boolean}) => {
   const uniqueModules = (arr: any[]) => {
@@ -26,9 +28,21 @@ const VariantMergeStrategy = ({generateVariants, preventAllVariantMerges = false
     return res;
   }
 
-  const mergeStrategy: Options['mergeStrategy'] = (aModules, bModules) => {
-    const variantsA = uniqueModules(generateVariants(aModules));
-    const variantsB = uniqueModules(generateVariants(bModules));
+  const variantsCache: Record<string, PathVariant[]> = {};
+
+  const getVariants = (chunkName: string, chunkModules: string[]) => {
+    if (variantsCache[chunkName]) {
+      return variantsCache[chunkName];
+    }
+
+    variantsCache[chunkName] = uniqueModules(generateVariants(chunkModules))
+
+    return variantsCache[chunkName];
+  }
+
+  const mergeStrategy: Options['mergeStrategy'] = ({aModules, aName, bModules, bName}) => {
+    const variantsA = getVariants(aName, aModules);
+    const variantsB = getVariants(bName, bModules);
 
     for (const vA of variantsA) {
       for (const vB of variantsB) {
